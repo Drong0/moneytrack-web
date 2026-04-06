@@ -7,7 +7,7 @@ import {
   Utensils, Coffee, Pizza, Apple, Beer, Wine, Sandwich, IceCream,
   Cake, Cookie, Fish, Beef, ShoppingBasket, Candy, GlassWater, Milk,
   // Transport
-  Car, Bus, Train, Plane, Bike, Fuel, Truck, Ship, MapPin, Navigation,
+  Car, Bus, Train, Plane, Bike, Fuel, Truck, Ship, MapPin,
   // Home & Utilities
   Home, Building, Wrench, Hammer, Lightbulb, Zap, Droplets, Flame,
   Trash2, ShowerHead,
@@ -29,7 +29,7 @@ import {
   // Communication
   Phone, Smartphone, Mail, MessageCircle, Globe,
   // Other
-  Repeat, Lock, Key, Settings, Wrench as Tool,
+  Repeat, Lock, Key, Settings,
   Dog, Cat, Bone, PlayCircle,
 } from 'lucide-react'
 

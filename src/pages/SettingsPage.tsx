@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../lib/AuthContext'
-import { COLORS as LEGACY_COLORS, ACCOUNT_ICONS, accountTypeName } from '../lib/format'
+import { COLORS as LEGACY_COLORS, accountTypeName } from '../lib/format'
 import IconCircle from '../components/IconCircle'
 import IconPickerSheet, { COLORS } from '../components/IconPickerSheet'
 import type { Account, Category, AccountType, CategoryType } from '../types/database'

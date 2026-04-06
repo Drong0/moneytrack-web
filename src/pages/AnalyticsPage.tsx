@@ -17,16 +17,15 @@ const TABS: { key: Tab; label: string }[] = [
 const RADIAN = Math.PI / 180
 
 interface LabelProps {
-  cx: number
-  cy: number
-  midAngle: number
-  innerRadius: number
-  outerRadius: number
-  percent: number
-  name: string
+  cx?: number
+  cy?: number
+  midAngle?: number
+  innerRadius?: number
+  outerRadius?: number
+  percent?: number
 }
 
-function PieLabel({ cx, cy, midAngle, innerRadius, outerRadius, percent, name }: LabelProps) {
+function PieLabel({ cx = 0, cy = 0, midAngle = 0, innerRadius = 0, outerRadius = 0, percent = 0 }: LabelProps) {
   if (percent < 0.05) return null
   const radius = innerRadius + (outerRadius - innerRadius) * 0.5
   const x = cx + radius * Math.cos(-midAngle * RADIAN)
@@ -93,7 +92,6 @@ export default function AnalyticsPage() {
   }, {})
 
   const pieData = Object.values(categoryTotals).sort((a, b) => b.value - a.value)
-  const total = pieData.reduce((s, d) => s + d.value, 0)
 
   return (
     <div className="page">
@@ -140,7 +138,7 @@ export default function AnalyticsPage() {
                 </Pie>
                 <Tooltip
                   contentStyle={{ background: '#1a1a28', border: 'none', borderRadius: 8, color: '#fff' }}
-                  formatter={(v: number) => formatMoney(v)}
+                  formatter={(v) => formatMoney(Number(v))}
                 />
               </PieChart>
             </ResponsiveContainer>
