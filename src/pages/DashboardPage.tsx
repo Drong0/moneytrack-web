@@ -183,6 +183,16 @@ export default function DashboardPage() {
   const [period, setPeriod] = useState<Period>('all')
   const [offset, setOffset] = useState(0)
   const [quickIncomeCategory, setQuickIncomeCategory] = useState<Category | null>(null)
+  const [showMenu, setShowMenu] = useState(false)
+  const [hideAmounts, setHideAmounts] = useState(() => localStorage.getItem('hideAmounts') === '1')
+
+  const toggleHide = () => {
+    const next = !hideAmounts
+    setHideAmounts(next)
+    localStorage.setItem('hideAmounts', next ? '1' : '0')
+  }
+
+  const mask = (val: string) => hideAmounts ? '•••••' : val
 
   useEffect(() => {
     if (!user) return
@@ -248,7 +258,48 @@ export default function DashboardPage() {
       <div className="dash-header">
         <div className="dash-avatar">{user?.email?.[0]?.toUpperCase() ?? 'U'}</div>
         <PeriodSelector period={period} offset={offset} onSelect={handlePeriodChange} onOffset={handleOffsetChange} />
-        <div className="dash-more-btn">•••</div>
+        <div style={{ position: 'relative' }}>
+          <button
+            className="dash-more-btn"
+            onClick={() => setShowMenu(o => !o)}
+          >•••</button>
+          {showMenu && (
+            <div style={{
+              position: 'absolute', top: 40, right: 0,
+              background: '#1a1a28', borderRadius: 16, padding: '8px 0',
+              minWidth: 220, zIndex: 50, boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
+            }}>
+              <div
+                onClick={toggleHide}
+                style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  padding: '14px 18px', cursor: 'pointer',
+                  borderBottom: '1px solid #2a2a3a',
+                }}
+              >
+                <span style={{ fontSize: 15 }}>Скрыть суммы</span>
+                <div style={{
+                  width: 44, height: 26, borderRadius: 13,
+                  background: hideAmounts ? '#007AFF' : '#3a3a4a',
+                  position: 'relative', transition: 'background 0.2s', flexShrink: 0,
+                }}>
+                  <div style={{
+                    position: 'absolute', top: 3,
+                    left: hideAmounts ? 21 : 3,
+                    width: 20, height: 20, borderRadius: '50%',
+                    background: '#fff', transition: 'left 0.2s',
+                  }} />
+                </div>
+              </div>
+              <div
+                onClick={() => setShowMenu(false)}
+                style={{ padding: '14px 18px', cursor: 'pointer', fontSize: 15, color: '#888' }}
+              >
+                Закрыть
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Доходы — фильтруются по периоду */}
@@ -257,7 +308,7 @@ export default function DashboardPage() {
           <div className="section-header">
             <span className="section-title">Доходы</span>
             <span className="section-total income">
-              {totalIncome > 0 ? `+${formatMoney(totalIncome)}` : formatMoney(0)}
+              {mask(totalIncome > 0 ? `+${formatMoney(totalIncome)}` : formatMoney(0))}
             </span>
           </div>
           <div className="h-scroll">
@@ -265,7 +316,7 @@ export default function DashboardPage() {
               <div key={cat.id} className="cat-scroll-item" onClick={() => setQuickIncomeCategory(cat)}>
                 <IconCircle iconKey={cat.icon_name} color={cat.color_hex} size="md" />
                 <div className="cat-scroll-name">{cat.name}</div>
-                <div className="cat-scroll-amount">{formatMoney(getCatAmount(cat.id))}</div>
+                <div className="cat-scroll-amount">{mask(formatMoney(getCatAmount(cat.id)))}</div>
               </div>
             ))}
           </div>
@@ -277,7 +328,7 @@ export default function DashboardPage() {
         <>
           <div className="section-header">
             <span className="section-title">Кошельки</span>
-            <span className="section-total">{formatMoney(totalBalance)}</span>
+            <span className="section-total">{mask(formatMoney(totalBalance))}</span>
           </div>
           <div className="h-scroll">
             {accounts.map(acc => (
@@ -287,7 +338,7 @@ export default function DashboardPage() {
                   color={acc.color_hex} size="sm"
                 />
                 <div className="acc-card-name">{acc.name}</div>
-                <div className="acc-card-amount">{formatMoney(getAccountBalance(acc), acc.currency)}</div>
+                <div className="acc-card-amount">{mask(formatMoney(getAccountBalance(acc), acc.currency))}</div>
               </div>
             ))}
           </div>
@@ -300,7 +351,7 @@ export default function DashboardPage() {
           <div className="section-header">
             <span className="section-title">Расходы</span>
             <span className="section-total expense">
-              {totalExpense > 0 ? formatMoney(totalExpense) : formatMoney(0)}
+              {mask(totalExpense > 0 ? formatMoney(totalExpense) : formatMoney(0))}
             </span>
           </div>
           <div className="expense-grid">
@@ -308,7 +359,7 @@ export default function DashboardPage() {
               <div key={cat.id} className="expense-grid-item" onClick={() => navigate(`/category/${cat.id}`)}>
                 <IconCircle iconKey={cat.icon_name} color={cat.color_hex} size="sm" />
                 <div className="cat-scroll-name">{cat.name}</div>
-                <div className="cat-scroll-amount">{formatMoney(getCatAmount(cat.id))}</div>
+                <div className="cat-scroll-amount">{mask(formatMoney(getCatAmount(cat.id)))}</div>
               </div>
             ))}
           </div>
