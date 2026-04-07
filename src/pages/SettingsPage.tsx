@@ -11,6 +11,7 @@ export default function SettingsPage() {
   const [accounts, setAccounts] = useState<Account[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [showAccountForm, setShowAccountForm] = useState(false)
+  const [editingAccount, setEditingAccount] = useState<Account | null>(null)
   const [showCategoryForm, setShowCategoryForm] = useState(false)
   const [catType, setCatType] = useState<CategoryType>('expense')
 
@@ -40,24 +41,27 @@ export default function SettingsPage() {
         </div>
         {accounts.map(acc => (
           <div key={acc.id} className="account-row">
-            <div className="account-info">
+            <div className="account-info" style={{ cursor: 'pointer' }} onClick={() => setEditingAccount(acc)}>
               <IconCircle iconKey={acc.type === 'cash' ? 'cash' : acc.type === 'savings' ? 'savings' : 'card'} color={acc.color_hex} size="sm" />
               <div>
                 <div className="account-name">{acc.name}</div>
                 <div className="account-type">{accountTypeName(acc.type)}</div>
               </div>
             </div>
-            <button
-              className="chip"
-              onClick={async () => {
-                if (confirm(`Удалить счёт "${acc.name}"?`)) {
-                  await supabase.from('accounts').delete().eq('id', acc.id)
-                  setAccounts(prev => prev.filter(a => a.id !== acc.id))
-                }
-              }}
-            >
-              Удалить
-            </button>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button className="chip" onClick={() => setEditingAccount(acc)}>Изменить</button>
+              <button
+                className="chip"
+                onClick={async () => {
+                  if (confirm(`Удалить счёт "${acc.name}"?`)) {
+                    await supabase.from('accounts').delete().eq('id', acc.id)
+                    setAccounts(prev => prev.filter(a => a.id !== acc.id))
+                  }
+                }}
+              >
+                Удалить
+              </button>
+            </div>
           </div>
         ))}
       </div>
@@ -101,6 +105,14 @@ export default function SettingsPage() {
         <AddAccountSheet
           userId={user!.id}
           onClose={() => { setShowAccountForm(false); loadData() }}
+        />
+      )}
+
+      {/* Edit Account Sheet */}
+      {editingAccount && (
+        <EditAccountSheet
+          account={editingAccount}
+          onClose={() => { setEditingAccount(null); loadData() }}
         />
       )}
 
@@ -228,6 +240,53 @@ function AddCategorySheet({ userId, onClose }: { userId: string; onClose: () => 
             <span>Иконка и цвет</span>
           </button>
           <button type="submit" className="btn-primary">Добавить</button>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+function EditAccountSheet({ account, onClose }: { account: Account; onClose: () => void }) {
+  const [name, setName] = useState(account.name)
+  const [balance, setBalance] = useState(String(account.initial_balance))
+  const [color, setColor] = useState(account.color_hex)
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    await supabase.from('accounts').update({
+      name,
+      initial_balance: parseFloat(balance) || 0,
+      color_hex: color,
+    }).eq('id', account.id)
+    onClose()
+  }
+
+  const handleDelete = async () => {
+    if (confirm(`Удалить счёт "${account.name}"?`)) {
+      await supabase.from('accounts').delete().eq('id', account.id)
+      onClose()
+    }
+  }
+
+  return (
+    <div className="sheet-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="sheet-content">
+        <div className="sheet-handle" />
+        <h2 style={{ marginBottom: 16 }}>Изменить счёт</h2>
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <input className="inline-input" placeholder="Название" value={name} onChange={e => setName(e.target.value)} required />
+          <input className="inline-input" placeholder="Начальный баланс" type="number" value={balance} onChange={e => setBalance(e.target.value)} />
+          <div className="chip-row">
+            {LEGACY_COLORS.map(c => (
+              <button key={c} type="button" style={{
+                width: 32, height: 32, borderRadius: '50%', background: c,
+                border: color === c ? '3px solid #fff' : '3px solid transparent',
+                cursor: 'pointer', padding: 0, minWidth: 32,
+              }} onClick={() => setColor(c)} />
+            ))}
+          </div>
+          <button type="submit" className="btn-primary">Сохранить</button>
+          <button type="button" className="btn-danger" onClick={handleDelete}>Удалить счёт</button>
         </form>
       </div>
     </div>

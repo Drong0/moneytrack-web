@@ -6,6 +6,99 @@ import { formatMoney, formatMonthUpper, getMonthRange } from '../lib/format'
 import IconCircle from '../components/IconCircle'
 import type { Account, Category } from '../types/database'
 
+function QuickIncomeSheet({
+  category,
+  accounts,
+  userId,
+  onClose,
+  onSaved,
+}: {
+  category: Category
+  accounts: Account[]
+  userId: string
+  onClose: () => void
+  onSaved: () => void
+}) {
+  const [amount, setAmount] = useState('')
+  const [accountId, setAccountId] = useState(accounts[0]?.id ?? '')
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const handleSave = async () => {
+    const num = parseFloat(amount)
+    if (!num || num <= 0) { setError('Введите сумму'); return }
+    if (!accountId) { setError('Выберите счёт'); return }
+    setSaving(true)
+    const { error: dbError } = await supabase.from('transactions').insert({
+      user_id: userId,
+      amount: num,
+      type: 'income',
+      category_id: category.id,
+      account_id: accountId,
+      to_account_id: null,
+      date: new Date().toISOString(),
+      note: null,
+      is_recurring: false,
+      recurring_rule: null,
+    } as Record<string, unknown>)
+    setSaving(false)
+    if (dbError) { setError(dbError.message); return }
+    onSaved()
+    onClose()
+  }
+
+  return (
+    <div className="sheet-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="sheet-content">
+        <div className="sheet-handle" />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+          <IconCircle iconKey={category.icon_name} color={category.color_hex} size="md" />
+          <div>
+            <div style={{ fontSize: 18, fontWeight: 700 }}>{category.name}</div>
+            <div style={{ fontSize: 13, color: '#888' }}>Доход</div>
+          </div>
+        </div>
+
+        <input
+          className="inline-input"
+          placeholder="Сумма"
+          type="number"
+          inputMode="decimal"
+          value={amount}
+          onChange={e => setAmount(e.target.value)}
+          style={{ fontSize: 24, fontWeight: 700, marginBottom: 12 }}
+          autoFocus
+        />
+
+        <div style={{ marginBottom: 16 }}>
+          <div style={{ fontSize: 13, color: '#888', marginBottom: 8 }}>На счёт</div>
+          <div className="chip-row">
+            {accounts.map(acc => (
+              <button
+                key={acc.id}
+                className={`chip ${accountId === acc.id ? 'active' : ''}`}
+                onClick={() => setAccountId(acc.id)}
+              >
+                {acc.name}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {error && (
+          <div style={{ background: '#3a1a1a', border: '1px solid #ff3b30', borderRadius: 12, padding: '10px 14px', color: '#ff3b30', fontSize: 14, marginBottom: 12 }}>
+            {error}
+          </div>
+        )}
+
+        <button className="btn-primary" onClick={handleSave} disabled={saving}>
+          {saving ? 'Сохранение...' : 'Добавить доход'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
 interface TxnEntry {
   amount: number
   type: string
@@ -22,6 +115,7 @@ export default function DashboardPage() {
   const [monthTxns, setMonthTxns] = useState<TxnEntry[]>([])
   const [allTxns, setAllTxns] = useState<TxnEntry[]>([])
   const [currentDate, setCurrentDate] = useState(new Date())
+  const [quickIncomeCategory, setQuickIncomeCategory] = useState<Category | null>(null)
 
   useEffect(() => {
     if (!user) return
@@ -115,7 +209,7 @@ export default function DashboardPage() {
           </div>
           <div className="h-scroll">
             {incomeCategories.map(cat => (
-              <div key={cat.id} className="cat-scroll-item" onClick={() => navigate(`/category/${cat.id}`)}>
+              <div key={cat.id} className="cat-scroll-item" onClick={() => setQuickIncomeCategory(cat)}>
                 <IconCircle iconKey={cat.icon_name} color={cat.color_hex} size="md" />
                 <div className="cat-scroll-name">{cat.name}</div>
                 <div className="cat-scroll-amount">{formatMoney(getCatAmount(cat.id))}</div>
@@ -173,6 +267,16 @@ export default function DashboardPage() {
         <div className="empty-state">
           <p>Добавьте счета и категории в Настройках</p>
         </div>
+      )}
+
+      {quickIncomeCategory && (
+        <QuickIncomeSheet
+          category={quickIncomeCategory}
+          accounts={accounts}
+          userId={user!.id}
+          onClose={() => setQuickIncomeCategory(null)}
+          onSaved={loadData}
+        />
       )}
     </div>
   )
